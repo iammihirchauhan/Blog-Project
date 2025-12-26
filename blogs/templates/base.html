@@ -26,24 +26,20 @@
 
     <script>
       function getCSRFToken() {
-        const csrfT = document.querySelector("[name=csrfmiddlewaretoken]");
-        return csrfT ? csrfT.value : "";
+        return document.querySelector("[name=csrfmiddlewaretoken]").value;
       }
 
-      function ajaxRequest({
-        url,
-        method,
-        data = null,
-        onSuccess = () => {},
-        onError = () => {},
-      }) {
+      function ajaxRequest({ url, method, data, onSuccess, onError }) {
         $.ajax({
           url: url,
           type: method,
+          headers: {
+            "X-CSRFToken": getCSRFToken(),
+          },
           data: data ? JSON.stringify(data) : null,
           contentType: "application/json",
-          headers: { "X-CSRFToken": getCSRFToken() },
           success: onSuccess,
+          error: onError,
         });
       }
     </script>

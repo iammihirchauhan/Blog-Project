@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}All Blogs{% endblock %}
+
+{% block content %}
+
+<h3 class="mb-4">All Blogs</h3>
+
+{% for b in blogs %}
+<div class="mb-4">
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h5 class="fw-bold">{{b.title}}</h5>
+      <p class="mt-2">{{b.content}}</p>
+    </div>
+  </div>
+  <div class="d-flex justify-content-end mt-2">
+    <span class="badge rounded-pill bg-light text-muted border px-3 py-2 mb-2">
+      by {{b.user.username}}
+    </span>
+  </div>
+
+{% empty %}
+<p class="text-muted text-center">No blogs found</p>
+{% endfor %}
+<a href="{% url 'blog_list' %}" class="btn btn-secondary mt-1">
+  Back
+</a>
+{% endblock %}
+</div>

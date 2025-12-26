@@ -49,26 +49,30 @@
     const emailError = $("#emailError");
     const passwordError = $("#passwordError");
 
-    usernameInput.on("input", () =>
-      usernameError.addClass("d-none").text("")
-    );
+    usernameInput.on("input", () => {
+      usernameInput.val(usernameInput.val().trimStart());
+      usernameError.addClass("d-none").text("");
+    });
 
-    emailInput.on("input", () =>
-      emailError.addClass("d-none").text("")
-    );
+    emailInput.on("input", () => {
+      emailInput.val(emailInput.val().trimStart());
+      emailError.addClass("d-none").text("");
+    });
 
-    passwordInput.on("input", () =>
-      passwordError.addClass("d-none").text("")
-    );
+
+     passwordInput.on("input", () => {
+      passwordInput.val(passwordInput.val().trimStart());
+      passwordError.addClass("d-none").text("");
+    });
 
     form.on("submit", function (e) {
       e.preventDefault();
 
       let valid = true;
 
-      usernameError.addClass("d-none").text("");
-      emailError.addClass("d-none").text("");
-      passwordError.addClass("d-none").text("");
+      usernameInput.val(usernameInput.val().trimStart());
+      emailInput.val(emailInput.val().trimStart());
+      passwordInput.val(passwordInput.val().trimStart());
 
       if (usernameInput.val().trim().length < 4) {
         usernameError

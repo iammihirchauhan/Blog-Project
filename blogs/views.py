@@ -72,6 +72,7 @@ def logout_view(request):
     logout(request)
     return redirect("login")
 
+
 @method_decorator(auth_required, name="dispatch")
 class BlogsView(View):
     @auth_required
@@ -98,8 +99,8 @@ class BlogsView(View):
 
 @method_decorator(auth_required, name="dispatch")
 class BlogDetailView(View):
-    def get(self, request, blog_id):
-        blog = get_object_or_404(Blog, id=blog_id, user=request.user)
+    def get(self, request, pk):
+        blog = get_object_or_404(Blog, pk=pk, user=request.user)
         return JsonResponse(
             {
                 "id": blog.id,
@@ -108,13 +109,10 @@ class BlogDetailView(View):
             }
         )
 
-    def put(self, request, blog_id):
-        blog = get_object_or_404(Blog, id=blog_id, user=request.user)
-        try:
-            data = json.loads(request.body)
-        except json.JSONDecodeError:
-            return JsonResponse({"error": "Invalid JSON"}, status=400)
+    def put(self, request, pk):
+        blog = get_object_or_404(Blog, pk=pk, user=request.user)
 
+        data = json.loads(request.body or "{}")
         title = (data.get("title") or "").strip()
         content = (data.get("content") or "").strip()
 
@@ -126,7 +124,13 @@ class BlogDetailView(View):
         blog.save()
         return JsonResponse({"success": True})
 
-    def delete(self, request, blog_id):
-        blog = get_object_or_404(Blog, id=blog_id, user=request.user)
+    def delete(self, request, pk):
+        blog = get_object_or_404(Blog, pk=pk, user=request.user)
         blog.delete()
-        return JsonResponse({"success": True}, status=204)
+        return JsonResponse({"success": True})
+
+
+@auth_required
+def blog_page(request):
+    blogs = Blog.objects.select_related("user").order_by("-created_at")
+    return render(request, "detail/blog_detail.html", {"blogs": blogs})
