@@ -1,10 +1,10 @@
-from django.http import JsonResponse, Http404
+from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from django.views import View
-from .models import Blog
+from .models import Blog, Comment
 import json
 from .util import auth_required
 
@@ -131,6 +131,15 @@ class BlogDetailView(View):
 
 
 @auth_required
-def blog_page(request):
-    blogs = Blog.objects.select_related("user").order_by("-created_at")
-    return render(request, "detail/blog_detail.html", {"blogs": blogs})
+def blog_page(request, blog_id):
+    blog = get_object_or_404(Blog, id=blog_id)
+    comments = blog.comments.select_related("user").order_by("-created_at")
+
+    if request.method == "POST":
+        text = request.POST.get("comment", "").strip()
+        if text:
+            Comment.objects.create(blog=blog, user=request.user, text=text)
+            return redirect("blog_page", blog_id=blog.id)
+
+    context = {"blog": blog, "comments": comments}
+    return render(request, "detail/blog_detail.html", context)

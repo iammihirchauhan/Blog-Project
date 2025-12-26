@@ -11,11 +11,10 @@
 {% for b in blogs %}
 <div
   class="card blog-card mb-3 shadow-sm position-relative"
-  data-id="{{ b.id }}"
->
+  data-id="{{ b.id }}">
   <div class="card-body">
     <h5>
-      <a href="{% url 'blog_page' %}" class="text-decoration-none text-black">
+      <a href="{% url 'blog_page' b.id%}" class="text-decoration-none text-black">
         {{ b.title }}
       </a>
     </h5>
@@ -210,9 +209,6 @@
         method: "DELETE",
         onSuccess: function () {
           card.remove();
-        },
-        onError: function () {
-          alert("Delete failed");
         },
       });
     });
