@@ -9,14 +9,14 @@
 </div>
 
 {% for b in blogs %}
-<div
+<div style="cursor: pointer;"
   class="card blog-card mb-3 shadow-sm position-relative"
+  id="comment-list"
+  data-url="{% url 'blog_page' b.id %}"
   data-id="{{ b.id }}">
   <div class="card-body">
-    <h5>
-      <a href="{% url 'blog_page' b.id%}" class="text-decoration-none text-black">
-        {{ b.title }}
-      </a>
+    <h5 class="blog-title">
+      {{b.title}}
     </h5>
 
     <small class="text-muted">by {{ b.user.username }}</small>
@@ -186,7 +186,7 @@
 
           if (blogId) {
             const card = $(`.blog-card[data-id="${blogId}"]`);
-            card.find("h5 a").text(payload.title);
+            card.find(".blog-title").text(payload.title);
             card.find("p").text(payload.content);
             const editBtn = card.find(".edit-blog-btn");
             editBtn.data("title", payload.title);
@@ -225,5 +225,21 @@
       clearGlobalError();
     });
   });
+  
+    $(document).on("click", ".blog-card", function () {
+      const url = $(this).data("url");
+      if (url) {
+      window.location.href = url;
+      }
+    });
+
+  $(document).on(
+    "click",
+    ".edit-blog-btn, .delete-blog-btn",
+    function (e) {
+      e.stopPropagation();
+    }
+  );
+
 </script>
 {% endblock %}

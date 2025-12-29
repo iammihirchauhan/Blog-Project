@@ -132,14 +132,56 @@ class BlogDetailView(View):
 
 @auth_required
 def blog_page(request, blog_id):
-    blog = get_object_or_404(Blog, id=blog_id)
-    comments = blog.comments.select_related("user").order_by("-created_at")
+    blog = get_object_or_404(Blog.objects.select_related("user"), id=blog_id)
+
+    comments = (
+        Comment.objects.filter(blog=blog).select_related("user").order_by("created_at")
+    )
 
     if request.method == "POST":
-        text = request.POST.get("comment", "").strip()
-        if text:
-            Comment.objects.create(blog=blog, user=request.user, text=text)
-            return redirect("blog_page", blog_id=blog.id)
+        data = json.loads(request.body)
+        text = (data.get("comment") or "").strip()
 
-    context = {"blog": blog, "comments": comments}
-    return render(request, "detail/blog_detail.html", context)
+        if not text:
+            return JsonResponse({"success": False})
+
+        comment = Comment.objects.create(blog=blog, user=request.user, text=text)
+
+        return JsonResponse(
+            {
+                "success": True,
+                "id": comment.id,
+                "username": comment.user.username,
+                "text": comment.text,
+                "time": "just now",
+                "is_owner": True,
+            }
+        )
+
+    return render(
+        request,
+        "detail/blog_detail.html",
+        {"blog": blog, "comments": comments},
+    )
+
+
+@auth_required
+def comment_detail(request, comment_id):
+    comment = get_object_or_404(Comment, id=comment_id, user=request.user)
+
+    if request.method == "PUT":
+        data = json.loads(request.body)
+        text = (data.get("text") or "").strip()
+
+        if not text:
+            return JsonResponse({"success": False})
+
+        comment.text = text
+        comment.save()
+        return JsonResponse({"success": True})
+
+    if request.method == "DELETE":
+        comment.delete()
+        return JsonResponse({"success": True})
+
+    return JsonResponse({"error": "Method not allowed"}, status=405)

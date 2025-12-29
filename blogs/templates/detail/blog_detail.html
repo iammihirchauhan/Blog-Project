@@ -1,15 +1,15 @@
-{% extends "base.html" %} 
-{% block title %}{{ blog.title }} {% endblock %}
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}{{ blog.title }}{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-lg-8">
+
     <div class="card shadow-sm mb-4">
       <div class="card-body p-4">
         <h3 class="fw-bold mb-3">{{ blog.title }}</h3>
-
         <p class="text-secondary">{{ blog.content }}</p>
-
         <div class="text-end mt-4">
           <span class="badge rounded-pill bg-light text-dark border px-3 py-2">
             by {{ blog.user.username }}
@@ -22,44 +22,192 @@
       <div class="card-body p-3">
         <h6 class="fw-bold mb-2">Add a comment</h6>
 
-        <form method="post">
+        <form id="comment-form">
           {% csrf_token %}
-
           <textarea
-            name="comment"
-            class="form-control mb-3"
+            id="comment-text"
+            class="form-control mb-1"
             rows="3"
-            placeholder="Write your comment here..."
-            required>
-          </textarea>
+            placeholder="Write your comment here..."></textarea>
 
-          <div class="text-end">
-            <button type="submit" class="btn btn-primary px-4">Comment</button>
+          <small id="comment-error" class="text-danger d-none">
+            Comment cannot be empty
+          </small>
+
+          <div class="text-end mt-2">
+            <button type="submit" class="btn btn-primary px-4">
+              Comment
+            </button>
           </div>
         </form>
       </div>
     </div>
 
-    {% if comments %}
-    <div class="card shadow-sm">
+    <div class="card shadow-sm" id="comments-card">
       <div class="card-header bg-white fw-bold">
-        Comments ({{ comments|length }})
+        Comments (<span id="comment-count">{{ comments|length }}</span>)
       </div>
 
-      <div class="card-body p-3">
+      <div class="card-body p-3" id="comment-list">
         {% for c in comments %}
-        <div class="border-bottom pb-2 mb-3">
-          <div class="fw-semibold small">{{ c.user.username }}</div>
-          <div class="text-muted small mt-1">{{ c.text }}</div>
+        <div class="border-bottom pb-2 mb-3 comment-item" data-id="{{ c.id }}">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="fw-semibold small">{{ c.user.username }}</div>
+              <div class="text-muted small mt-1 comment-text">{{ c.text }}</div>
+              <div class="text-muted small">{{ c.created_at|naturaltime }}</div>
+            </div>
+
+            {% if c.user == user %}
+            <div class="d-flex flex-column gap-2">
+              <button class="btn btn-sm btn-warning edit-comment">Edit</button>
+              <button class="btn btn-sm btn-danger delete-comment">Delete</button>
+            </div>
+            {% endif %}
+          </div>
         </div>
+        {% empty %}
+        <p class="text-muted small" id="no-comments">No comments yet</p>
         {% endfor %}
       </div>
     </div>
-    {% endif %}
 
     <a href="{% url 'blog_list' %}" class="btn btn-outline-secondary mt-4">
       Back to blogs
     </a>
+
   </div>
 </div>
+
+<div class="modal fade" id="editCommentModal">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Edit Comment</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <input type="hidden" id="edit-comment-id">
+        <textarea id="edit-comment-text" class="form-control" rows="3"></textarea>
+        <small id="edit-comment-error" class="text-danger d-none">
+          Comment cannot be empty
+        </small>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-success" id="update-comment-btn">Update</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  $("#comment-form").on("submit", function (e) {
+    e.preventDefault();
+
+    const text = $("#comment-text").val().trim();
+
+    if (!text) {
+      $("#comment-error").removeClass("d-none");
+      $("#comment-text").addClass("is-invalid");
+      return;
+    }
+
+    ajaxRequest({
+      url: window.location.href,
+      method: "POST",
+      data: { comment: text },
+
+      onSuccess: function (res) {
+        if (!res.success) return;
+
+        $("#comments-card").removeClass("d-none");
+
+        $("#comment-text").val("");
+        $("#comment-error").addClass("d-none");
+        $("#comment-text").removeClass("is-invalid");
+
+        $("#no-comments").remove();
+
+        $("#comment-list").append(`
+          <div class="border-bottom pb-2 mb-3 comment-item" data-id="${res.id}">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <div class="fw-semibold small">${res.username}</div>
+                <div class="text-muted small mt-1 comment-text">${res.text}</div>
+                <div class="text-muted small">just now</div>
+              </div>
+              <div class="d-flex flex-column gap-2">
+                <button class="btn btn-sm btn-warning edit-comment">Edit</button>
+                <button class="btn btn-sm btn-danger delete-comment">Delete</button>
+              </div>
+            </div>
+          </div>
+        `);
+
+        let count = parseInt($("#comment-count").text());
+        $("#comment-count").text(count + 1);
+      }
+    });
+  });
+
+  const editCommentModal = new bootstrap.Modal(
+    document.getElementById("editCommentModal")
+  );
+
+  $(document).on("click", ".edit-comment", function () {
+    const box = $(this).closest(".comment-item");
+    $("#edit-comment-id").val(box.data("id"));
+    $("#edit-comment-text").val(box.find(".comment-text").text().trim());
+    $("#edit-comment-error").addClass("d-none");
+    editCommentModal.show();
+  });
+
+  $("#update-comment-btn").on("click", function () {
+    const id = $("#edit-comment-id").val();
+    const text = $("#edit-comment-text").val().trim();
+
+    if (!text) {
+      $("#edit-comment-error").removeClass("d-none");
+      return;
+    }
+
+    ajaxRequest({
+      url: `/comments/${id}/`,
+      method: "PUT",
+      data: { text },
+      onSuccess: function (res) {
+        if (res.success) {
+          $(`.comment-item[data-id="${id}"]`)
+            .find(".comment-text")
+            .text(text);
+          editCommentModal.hide();
+        }
+      }
+    });
+  });
+
+  $(document).on("click", ".delete-comment", function () {
+    if (!confirm("Delete this comment?")) return;
+
+    const box = $(this).closest(".comment-item");
+    const id = box.data("id");
+
+    ajaxRequest({
+      url: `/comments/${id}/`,
+      method: "DELETE",
+      onSuccess: function (res) {
+        if (res.success) {
+          box.remove();
+          let count = parseInt($("#comment-count").text());
+          $("#comment-count").text(count - 1);
+        }
+      }
+    });
+  });
+</script>
 {% endblock %}
