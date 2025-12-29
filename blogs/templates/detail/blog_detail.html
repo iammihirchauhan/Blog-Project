@@ -106,6 +106,21 @@
 
 {% block scripts %}
 <script>
+
+  $("#comment-text").on("keydown", function (e) {
+    if (e.key === " " && this.selectionStart === 0) {
+      e.preventDefault();
+    }
+  });
+
+  $("#comment-text").on("input", function () {
+  const value = $(this).val().trim();
+  if (value.length > 0) {
+    $("#comment-error").addClass("d-none");
+    $(this).removeClass("is-invalid");
+    }
+  });
+
   $("#comment-form").on("submit", function (e) {
     e.preventDefault();
 

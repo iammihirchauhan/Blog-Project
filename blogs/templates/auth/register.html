@@ -59,8 +59,7 @@
       emailError.addClass("d-none").text("");
     });
 
-
-     passwordInput.on("input", () => {
+    passwordInput.on("input", () => {
       passwordInput.val(passwordInput.val().trimStart());
       passwordError.addClass("d-none").text("");
     });
@@ -75,48 +74,42 @@
       passwordInput.val(passwordInput.val().trimStart());
 
       if (usernameInput.val().trim().length < 4) {
-        usernameError
-          .removeClass("d-none")
-          .text("Username must be at least 4 characters");
+        usernameError.removeClass("d-none").text("Username must be at least 4 characters");
         valid = false;
       }
 
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(emailInput.val())) {
-        emailError
-          .removeClass("d-none")
-          .text("Enter a valid email");
+        emailError.removeClass("d-none").text("Enter a valid email");
         valid = false;
       }
 
       if (passwordInput.val().trim().length < 6) {
-        passwordError
-          .removeClass("d-none")
-          .text("Password must be at least 6 characters");
+        passwordError.removeClass("d-none").text("Password must be at least 6 characters");
         valid = false;
       }
 
       if (!valid) return;
 
-      $.ajax({
+      ajaxRequest({
         url: "{% url 'register' %}",
-        type: "POST",
-        data: form.serialize(),
-        success: function (res) {
+        method: "POST",
+        data: Object.fromEntries(new FormData(form[0])),
+        onSuccess: function (res) {
           if (res.success) {
             $("#successMsg").removeClass("d-none");
-            form.trigger("reset");           
-            setTimeout(function () {
-            $("#successMsg").addClass("d-none");
-            }, 3000);
+            form.trigger("reset");
 
+            setTimeout(() => {
+              $("#successMsg").addClass("d-none");
+            }, 3000);
           } else if (res.field === "username") {
             usernameError.removeClass("d-none").text(res.error);
           } else if (res.field === "email") {
             emailError.removeClass("d-none").text(res.error);
           }
         },
-        error: function () {
+        onError: function () {
           alert("Server error");
         }
       });

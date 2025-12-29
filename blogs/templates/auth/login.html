@@ -40,12 +40,12 @@
     const usernameError = $("#usernameError");
     const passwordError = $("#passwordError");
 
-     usernameInput.on("input", () => {
+    usernameInput.on("input", () => {
       usernameInput.val(usernameInput.val().trimStart());
       usernameError.addClass("d-none").text("");
     });
 
-     passwordInput.on("input", () => {
+    passwordInput.on("input", () => {
       passwordInput.val(passwordInput.val().trimStart());
       passwordError.addClass("d-none").text("");
     });
@@ -59,26 +59,22 @@
       passwordInput.val(passwordInput.val().trimStart());
 
       if (usernameInput.val().trim().length < 4) {
-        usernameError
-          .removeClass("d-none")
-          .text("Username must be at least 4 characters");
+        usernameError.removeClass("d-none").text("Username must be at least 4 characters");
         valid = false;
       }
 
       if (passwordInput.val().trim().length < 6) {
-        passwordError
-          .removeClass("d-none")
-          .text("Password must be at least 6 characters");
+        passwordError.removeClass("d-none").text("Password must be at least 6 characters");
         valid = false;
       }
 
       if (!valid) return;
 
-      $.ajax({
+      ajaxRequest({
         url: "{% url 'login' %}",
-        type: "POST",
-        data: form.serialize(),
-        success: function (res) {
+        method: "POST",
+        data: Object.fromEntries(new FormData(form[0])),
+        onSuccess: function (res) {
           if (res.success) {
             window.location.href = "/blogs/";
           } else if (res.field === "username") {
@@ -87,13 +83,11 @@
             passwordError.removeClass("d-none").text(res.error);
           }
         },
-        error: function () {
+        onError: function () {
           alert("Server error");
-        },
+        }
       });
     });
   });
 </script>
-
 {% endblock %}
-

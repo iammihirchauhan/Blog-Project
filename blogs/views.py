@@ -16,9 +16,11 @@ def home(request):
 
 def register(request):
     if request.method == "POST":
-        username = request.POST.get("username")
-        email = request.POST.get("email")
-        password = request.POST.get("password")
+        data = json.loads(request.body)
+
+        username = data.get("username")
+        email = data.get("email")
+        password = data.get("password")
 
         if User.objects.filter(username=username).exists():
             return JsonResponse(
@@ -31,11 +33,14 @@ def register(request):
 
         if User.objects.filter(email=email).exists():
             return JsonResponse(
-                {"success": False, "field": "email", "error": "Email already exists"}
+                {
+                    "success": False,
+                    "field": "email",
+                    "error": "Email already exists",
+                }
             )
 
         User.objects.create_user(username=username, email=email, password=password)
-
         return JsonResponse({"success": True})
 
     return render(request, "auth/register.html")
@@ -43,8 +48,10 @@ def register(request):
 
 def login_view(request):
     if request.method == "POST":
-        username = request.POST.get("username")
-        password = request.POST.get("password")
+        data = json.loads(request.body)
+
+        username = data.get("username")
+        password = data.get("password")
 
         if not User.objects.filter(username=username).exists():
             return JsonResponse(
@@ -59,7 +66,11 @@ def login_view(request):
 
         if not user:
             return JsonResponse(
-                {"success": False, "field": "password", "error": "Incorrect password"}
+                {
+                    "success": False,
+                    "field": "password",
+                    "error": "Incorrect password",
+                }
             )
 
         login(request, user)
