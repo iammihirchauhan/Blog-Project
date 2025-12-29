@@ -48,9 +48,8 @@ def register(request):
 
 def login_view(request):
     if request.method == "POST":
-        data = json.loads(request.body)
-        username = data.get("username")
-        password = data.get("password")
+        username = request.POST.get("username", "").strip()
+        password = request.POST.get("password", "").strip()
 
         if not User.objects.filter(username=username).exists():
             return JsonResponse(
@@ -63,13 +62,9 @@ def login_view(request):
 
         user = authenticate(request, username=username, password=password)
 
-        if not user:
+        if user is None:
             return JsonResponse(
-                {
-                    "success": False,
-                    "field": "password",
-                    "error": "Incorrect password",
-                }
+                {"success": False, "field": "password", "error": "Incorrect password"}
             )
 
         login(request, user)
